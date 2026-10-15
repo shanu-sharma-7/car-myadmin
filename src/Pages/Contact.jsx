@@ -12,11 +12,12 @@ import {
   FaPhone,
   FaCommentDots,
   FaArrowRight,
-  FaMapMarkerAlt,
 } from "react-icons/fa";
-
+import axios from "axios";
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -28,6 +29,8 @@ const Contact = () => {
   });
 
   const [formMessage, setFormMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -38,44 +41,90 @@ const Contact = () => {
     }));
 
     setFormMessage("");
+    setIsSuccess(false);
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+
+    if (isSubmitting) return;
 
     const { name, email, phone, carName, message } = formData;
 
-    if (!name.trim() || !email.trim() || !phone.trim() || !message.trim()) {
+    if (
+      !name.trim() ||
+      !email.trim() ||
+      !phone.trim() ||
+      !message.trim()
+    ) {
       setFormMessage("Please fill in all required fields.");
+      setIsSuccess(false);
       return;
     }
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailPattern.test(email)) {
+    if (!emailPattern.test(email.trim())) {
       setFormMessage("Please enter a valid email address.");
+      setIsSuccess(false);
       return;
     }
 
-    const whatsappNumber = "+919999999999";
+    if (!API_URL) {
+      setFormMessage(
+        "The enquiry service is not configured. Please try again later."
+      );
+      setIsSuccess(false);
+      console.error("VITE_API_URL is missing from the frontend environment.");
+      return;
+    }
 
-    const whatsappMessage = [
-      "Hello CarArea!",
-      "",
-      `Name: ${name.trim()}`,
-      `Email: ${email.trim()}`,
-      `Phone: ${phone.trim()}`,
-      `Car of Interest: ${carName.trim() || "Not specified"}`,
-      "",
-      `Rental Query: ${message.trim()}`,
-    ].join("\n");
+    setIsSubmitting(true);
+    setFormMessage("Submitting your enquiry...");
+    setIsSuccess(false);
 
-    const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-      whatsappMessage
-    )}`;
+    try {
+      const response = await axios.post(`${API_URL}/api/contacts`, {
+        name: name.trim(),
+        email: email.trim(),
+        phone: phone.trim(),
+        carName: carName.trim(),
+        message: message.trim(),
+      });
 
-    window.open(whatsappUrl, "_blank", "noopener,noreferrer");
-    setFormMessage("Your query is ready to send on WhatsApp.");
+      if (response.data?.success === false) {
+        throw new Error(
+          response.data.message || "Unable to save your enquiry."
+        );
+      }
+
+      setFormMessage(
+        "Your enquiry has been submitted successfully. Our team will contact you soon."
+      );
+      setIsSuccess(true);
+
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        carName: "",
+        message: "",
+      });
+    } catch (error) {
+      console.error(
+        "CONTACT SUBMISSION ERROR:",
+        error.response?.data || error.message
+      );
+
+      setFormMessage(
+        error.response?.data?.message ||
+          error.message ||
+          "Your enquiry could not be submitted. Please try again."
+      );
+      setIsSuccess(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const contactItems = [
@@ -110,6 +159,12 @@ const Contact = () => {
 
   const fieldClass =
     "flex min-w-0 items-center gap-3 border border-white/10 bg-[#0b0b0b] px-4 transition focus-within:border-[#c9a96e]/70";
+
+  const whatsappNumber = "919999999999";
+
+  const whatsappMessage = encodeURIComponent(
+    "Hello CarArea! I need help choosing a rental car."
+  );
 
   return (
     <div className="min-h-screen bg-[#090909] text-white">
@@ -200,7 +255,7 @@ const Contact = () => {
                 })}
               </div>
 
-              {/* WhatsApp call to action */}
+              {/* Separate WhatsApp button */}
               <div className="mt-5 border border-[#c9a96e]/20 bg-gradient-to-br from-[#c9a96e]/[0.10] to-transparent p-5 sm:p-6">
                 <FaInfoCircle className="mb-3 text-xl text-[#d7b77d]" />
 
@@ -209,14 +264,12 @@ const Contact = () => {
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-white/45">
-                  Tell us about your trip, and we'll help you explore the
-                  available options.
+                  Have a quick question? Chat with our team directly on
+                  WhatsApp.
                 </p>
 
                 <a
-                  href={`https://wa.me/910000000000?text=${encodeURIComponent(
-                    "Hello CarArea! I need help choosing a rental car."
-                  )}`}
+                  href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="mt-5 inline-flex min-h-11 items-center gap-3 border border-[#c9a96e]/50 px-4 py-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#e0c18b] transition hover:bg-[#c9a96e] hover:text-black"
@@ -241,7 +294,7 @@ const Contact = () => {
                 </h2>
 
                 <p className="mt-3 text-sm leading-6 text-white/45">
-                  Fill out the details below to prepare your rental enquiry.
+                  Fill out the form below and our team will get back to you.
                 </p>
               </div>
 
@@ -378,24 +431,29 @@ const Contact = () => {
                 {formMessage && (
                   <p
                     role="status"
-                    className="border border-[#c9a96e]/20 bg-[#c9a96e]/[0.07] px-4 py-3 text-sm text-[#e0c18b]"
+                    aria-live="polite"
+                    className={`border px-4 py-3 text-sm ${
+                      isSuccess
+                        ? "border-green-500/25 bg-green-500/[0.07] text-green-300"
+                        : "border-[#c9a96e]/20 bg-[#c9a96e]/[0.07] text-[#e0c18b]"
+                    }`}
                   >
                     {formMessage}
                   </p>
                 )}
 
+                {/* Submit only — no WhatsApp action here */}
                 <button
                   type="submit"
-                  className="flex min-h-12 w-full items-center justify-center gap-3 bg-[#c9a96e] px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-black transition hover:bg-[#e0c18b] focus:outline-none focus:ring-2 focus:ring-[#c9a96e] focus:ring-offset-2 focus:ring-offset-[#111111]"
+                  disabled={isSubmitting}
+                  className="flex min-h-12 w-full items-center justify-center gap-3 bg-[#c9a96e] px-5 py-4 text-xs font-bold uppercase tracking-[0.16em] text-black transition hover:bg-[#e0c18b] disabled:cursor-not-allowed disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-[#c9a96e] focus:ring-offset-2 focus:ring-offset-[#111111]"
                 >
                   <FaPaperPlane />
-                  Prepare Enquiry on WhatsApp
-                  <FaArrowRight />
+                  {isSubmitting ? "Submitting..." : "Submit Enquiry"}
                 </button>
 
                 <p className="text-center text-xs leading-5 text-white/35">
-                  Your message will open in WhatsApp for you to review and
-                  send.
+                  Your enquiry will be saved for our team to review.
                 </p>
               </form>
             </div>

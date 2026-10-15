@@ -7,7 +7,7 @@ import { FaGasPump, FaCarSide, FaArrowRight } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 
 const API_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+  import.meta.env.VITE_API_URL || "https://carr-backend.onrender.com";
 
 const Homecars = () => {
   const [cars, setCars] = useState([]);

@@ -14,7 +14,7 @@ import {
 import Navbar from "../Components/Navbar";
 import Footer from "../Components/Footer";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://carr-backend.onrender.com";
 
 const Car = () => {
   const [cars, setCars] = useState([]);

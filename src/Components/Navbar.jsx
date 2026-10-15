@@ -1,34 +1,11 @@
 
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  FaUser,
-  FaSignOutAlt,
-  FaBars,
-  FaTimes,
-  FaCarSide,
-} from "react-icons/fa";
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { FaBars, FaTimes } from "react-icons/fa";
 import logocar from "../assets/logocar.png";
 
 const Navbar = () => {
-  const [loggedIn, setLoggedIn] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    setLoggedIn(!!localStorage.getItem("token"));
-  }, []);
-
-  const handleAuth = () => {
-    if (loggedIn) {
-      localStorage.removeItem("token");
-      setLoggedIn(false);
-    }
-
-    setMenuOpen(false);
-    navigate("/login");
-  };
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -43,7 +20,6 @@ const Navbar = () => {
     <header className="relative z-50 bg-[#090909] px-4 pt-3 sm:px-6 lg:px-10">
       <nav className="mx-auto max-w-[1400px] border border-white/10 bg-[#111111]">
         <div className="flex min-h-[76px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
-          {/* Brand */}
           <Link
             to="/"
             onClick={closeMenu}
@@ -79,20 +55,10 @@ const Navbar = () => {
             ))}
           </div>
 
-          {/* Desktop authentication */}
+          {/* Mobile menu button */}
           <button
             type="button"
-            onClick={handleAuth}
-            className="hidden min-h-11 items-center justify-center gap-2 border border-[#c9a96e]/50 px-5 text-xs font-semibold uppercase tracking-[0.12em] text-[#e0c18b] transition hover:bg-[#c9a96e] hover:text-black lg:inline-flex"
-          >
-            {loggedIn ? <FaSignOutAlt /> : <FaUser />}
-            {loggedIn ? "Logout" : "Login"}
-          </button>
-
-          {/* Mobile menu toggle */}
-          <button
-            type="button"
-            onClick={() => setMenuOpen(!menuOpen)}
+            onClick={() => setMenuOpen((previous) => !previous)}
             className="flex h-11 w-11 items-center justify-center border border-white/15 text-[#d7b77d] transition hover:border-[#c9a96e] lg:hidden"
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
@@ -103,7 +69,7 @@ const Navbar = () => {
 
         {/* Mobile navigation */}
         {menuOpen && (
-          <div className="border-t border-white/10 bg-[#111111] px-4 py-5 lg:hidden">
+          <div className="border-t border-white/10 bg-[#111111] px-4 py-3 lg:hidden">
             <div className="flex flex-col">
               {navLinks.map((link) => (
                 <Link
@@ -116,15 +82,6 @@ const Navbar = () => {
                 </Link>
               ))}
             </div>
-
-            <button
-              type="button"
-              onClick={handleAuth}
-              className="mt-5 flex min-h-12 w-full items-center justify-center gap-3 bg-[#c9a96e] px-5 text-xs font-bold uppercase tracking-[0.15em] text-black transition hover:bg-[#e0c18b]"
-            >
-              {loggedIn ? <FaSignOutAlt /> : <FaUser />}
-              {loggedIn ? "Logout" : "Login"}
-            </button>
           </div>
         )}
       </nav>
